@@ -133,3 +133,22 @@ html, body { overflow-x: hidden; max-width: 100%; }
   .tab { padding: 8px 13px; }
   .page-head .btn { width: 100%; justify-content: center; } /* full-width primary action on phones */
 }
+
+/* ---- add-record modals (interactive demo) ---- */
+.modal-overlay { position: fixed; inset: 0; background: rgba(6,12,20,0.66); backdrop-filter: blur(3px); display: grid; place-items: center; z-index: 200; padding: 16px; }
+.modal { width: 100%; max-width: 470px; background: var(--midnight); border: 1px solid var(--line-hi); border-radius: 16px; box-shadow: 0 30px 90px rgba(0,0,0,0.55); max-height: 92vh; overflow-y: auto; }
+.modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 18px 20px 10px; }
+.modal-body { padding: 4px 20px 6px; display: grid; gap: 12px; }
+.modal-foot { display: flex; gap: 10px; justify-content: flex-end; padding: 14px 20px 18px; }
+.field { display: grid; gap: 5px; }
+.field > label { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--slate-dim); text-transform: uppercase; }
+.field input, .field select { width: 100%; height: 38px; border-radius: 9px; border: 1px solid var(--line-hi); background: var(--surface); color: var(--platinum); padding: 0 11px; font-family: inherit; font-size: 13px; }
+.field input:focus, .field select:focus { outline: none; border-color: var(--gold); }
+.field select option { color: #000; }
+.field-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pick { display: flex; flex-wrap: wrap; gap: 7px; }
+.pick label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-hi); border-radius: 999px; padding: 5px 10px; font-size: 11.5px; cursor: pointer; color: var(--slate); }
+.pick label:hover { border-color: var(--gold); color: var(--platinum); }
+.pick input { accent-color: var(--gold); margin: 0; }
+.tag-new { display: inline-flex; align-items: center; font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.1em; color: var(--gold); background: var(--gold-soft); padding: 2px 6px; border-radius: 5px; }

@@ -3,14 +3,18 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { JOBS, jobTotal, fmtDateShort, type JobStatus } from '../../lib/data'
 import { kes } from '../../lib/brand'
+import { useStore } from '../../lib/store'
+import { AddBookingButton } from '../../components/QuickAdd'
 
 const JOB_COLORS: Record<string, string> = { Enquiry: 'var(--slate)', Quoted: 'var(--info)', Confirmed: 'var(--gold)', Dispatched: 'var(--ok)', Completed: 'var(--slate)', Invoiced: 'var(--ok)' }
 const TYPE_TINT: Record<string, string> = { Government: 'var(--gold)', Diplomatic: 'var(--info)', Corporate: 'var(--platinum)', Wedding: '#C9879F', Event: 'var(--ok)' }
 const TABS: (JobStatus | 'All')[] = ['All', 'Enquiry', 'Quoted', 'Confirmed', 'Dispatched', 'Invoiced']
+const SEED = new Set(JOBS.map(j => j.id))
 
 export default function JobsPage() {
+  const store = useStore()
   const [tab, setTab] = useState<JobStatus | 'All'>('All')
-  const list = JOBS.filter(j => tab === 'All' || j.status === tab)
+  const list = store.jobs.filter(j => tab === 'All' || j.status === tab)
 
   return (
     <div>
@@ -20,7 +24,7 @@ export default function JobsPage() {
           <h1 className="page-title">Bookings &amp; Jobs</h1>
           <div className="dim" style={{ fontSize: 12.5, marginTop: 2 }}>Enquiry → quote → dispatch → sign-off → invoice</div>
         </div>
-        <button className="btn btn-primary">+ New booking</button>
+        <AddBookingButton />
       </div>
 
       <div className="tabbar" style={{ marginBottom: 14 }}>
@@ -34,7 +38,7 @@ export default function JobsPage() {
             {list.map(j => (
               <tr key={j.id} className="row">
                 <td className="mono dimmer" style={{ fontSize: 10.5, whiteSpace: 'nowrap' }}>{j.ref}</td>
-                <td style={{ maxWidth: 260 }}><Link href={'/jobs/' + j.id} style={{ fontWeight: 600 }}>{j.title}</Link><div className="dim" style={{ fontSize: 11 }}>{j.location}</div></td>
+                <td style={{ maxWidth: 260 }}>{SEED.has(j.id) ? <Link href={'/jobs/' + j.id} style={{ fontWeight: 600 }}>{j.title}</Link> : <span style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 7 }}>{j.title}<span className="tag-new">NEW</span></span>}<div className="dim" style={{ fontSize: 11 }}>{j.location}</div></td>
                 <td><span style={{ color: TYPE_TINT[j.clientType], fontSize: 12.5 }}>{j.client}</span><div className="dimmer mono" style={{ fontSize: 9.5 }}>{j.clientType.toUpperCase()}</div></td>
                 <td className="num dim" style={{ fontSize: 11.5, whiteSpace: 'nowrap' }}>{fmtDateShort(j.startDate)}–{fmtDateShort(j.endDate)}</td>
                 <td className="num dim">{j.vehicleIds.length || '—'}</td>

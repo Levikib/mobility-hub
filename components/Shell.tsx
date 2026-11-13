@@ -2,6 +2,16 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { BRAND } from '../lib/brand'
+import { StoreProvider, useStore } from '../lib/store'
+
+function ResetDemo() {
+  const store = useStore()
+  return (
+    <button onClick={store.reset} className="dim" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', fontSize: 10.5, textDecoration: 'underline', color: 'var(--slate-dim)', marginTop: 8 }}>
+      Reset demo data
+    </button>
+  )
+}
 
 const NAV = [
   { section: 'Operations' },
@@ -36,6 +46,7 @@ function NavLinks({ pathname }: { pathname: string }) {
 export default function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   return (
+    <StoreProvider>
     <div className="app">
       <aside className="sidebar">
         <Link href="/" className="brand">
@@ -51,6 +62,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           <div className="card card-pad" style={{ padding: '12px 13px' }}>
             <div className="eyebrow" style={{ marginBottom: 5 }}>{BRAND.tagline}</div>
             <div style={{ fontSize: 11, color: 'var(--slate)', lineHeight: 1.5 }}>Demo environment · indicative data for pitch review.</div>
+            <ResetDemo />
           </div>
         </div>
       </aside>
@@ -64,5 +76,6 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
       <main className="main">{children}</main>
     </div>
+    </StoreProvider>
   )
 }

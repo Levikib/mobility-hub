@@ -1,6 +1,12 @@
+'use client'
 import Link from 'next/link'
-import { VEHICLES, DRIVERS, JOBS, jobTotal, daysUntil, docStatus, fmtDate, vehicleById, driverById, TODAY } from '../lib/data'
+import { VEHICLES, JOBS, jobTotal, daysUntil, docStatus, driverById, TODAY } from '../lib/data'
 import { kes } from '../lib/brand'
+import { useStore } from '../lib/store'
+import { AddBookingButton } from '../components/QuickAdd'
+
+const SEED_V = new Set(VEHICLES.map(v => v.id))
+const SEED_J = new Set(JOBS.map(j => j.id))
 
 const STATUS_COLORS: Record<string, string> = {
   Available: 'var(--ok)', 'On Job': 'var(--info)', Maintenance: 'var(--warn)',
@@ -20,29 +26,32 @@ function StatTile({ label, value, sub, accent }: { label: string; value: string;
 }
 
 export default function Dashboard() {
-  const available = VEHICLES.filter(v => v.status === 'Available').length
-  const onJob = VEHICLES.filter(v => v.status === 'On Job').length
-  const maint = VEHICLES.filter(v => v.status === 'Maintenance').length
-  const avgUtil = Math.round(VEHICLES.reduce((a, v) => a + v.utilisation, 0) / VEHICLES.length)
+  const store = useStore()
+  const vehicles = store.vehicles
+  const drivers = store.drivers
+  const jobs = store.jobs
 
-  const live = JOBS.filter(j => ['Confirmed', 'Dispatched'].includes(j.status))
-  const pipeline = JOBS.filter(j => ['Enquiry', 'Quoted'].includes(j.status))
-  const pipelineValue = pipeline.reduce((a, j) => a + jobTotal(j), 0)
+  const available = vehicles.filter(v => v.status === 'Available').length
+  const onJob = vehicles.filter(v => v.status === 'On Job').length
+  const maint = vehicles.filter(v => v.status === 'Maintenance').length
+  const avgUtil = Math.round(vehicles.reduce((a, v) => a + v.utilisation, 0) / vehicles.length)
+
+  const live = jobs.filter(j => ['Confirmed', 'Dispatched'].includes(j.status))
   const bookedValue = live.reduce((a, j) => a + jobTotal(j), 0)
-  const receivables = JOBS.filter(j => j.status === 'Invoiced').reduce((a, j) => a + jobTotal(j), 0)
+  const receivables = jobs.filter(j => j.status === 'Invoiced').reduce((a, j) => a + jobTotal(j), 0)
 
-  const upcoming = [...JOBS]
+  const upcoming = [...jobs]
     .filter(j => daysUntil(j.endDate) >= 0 && j.status !== 'Invoiced')
     .sort((a, b) => daysUntil(a.startDate) - daysUntil(b.startDate))
 
   // compliance alerts across fleet + drivers
   type Alert = { who: string; sub: string; label: string; expiry: string; d: number; kind: 'vehicle' | 'driver' }
   const alerts: Alert[] = []
-  for (const v of VEHICLES) for (const doc of v.compliance) {
+  for (const v of vehicles) for (const doc of v.compliance) {
     const s = docStatus(doc.expiry)
     if (s !== 'ok') alerts.push({ who: v.name, sub: v.plate, label: doc.label, expiry: doc.expiry, d: daysUntil(doc.expiry), kind: 'vehicle' })
   }
-  for (const dr of DRIVERS) for (const doc of dr.compliance) {
+  for (const dr of drivers) for (const doc of dr.compliance) {
     const s = docStatus(doc.expiry)
     if (s !== 'ok') alerts.push({ who: dr.name, sub: dr.licenceClass, label: doc.label, expiry: doc.expiry, d: daysUntil(doc.expiry), kind: 'driver' })
   }
@@ -58,11 +67,11 @@ export default function Dashboard() {
             {TODAY.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })} · Nairobi
           </div>
         </div>
-        <Link href="/jobs" className="btn btn-primary">+ New booking</Link>
+        <AddBookingButton />
       </div>
 
       <div className="grid stat-grid" style={{ marginBottom: 14 }}>
-        <StatTile label="Fleet" value={String(VEHICLES.length)} sub={`${available} available · ${onJob} on job · ${maint} in service`} />
+        <StatTile label="Fleet" value={String(vehicles.length)} sub={`${available} available · ${onJob} on job · ${maint} in service`} />
         <StatTile label="Avg. utilisation (30d)" value={avgUtil + '%'} sub="Across all vehicles" />
         <StatTile label="Booked value" value={kes(bookedValue, { compact: true })} sub={`${live.length} confirmed / dispatched`} accent="var(--ok)" />
         <StatTile label="Receivables" value={kes(receivables, { compact: true })} sub="Invoiced · awaiting settlement" accent="var(--warn)" />
@@ -85,7 +94,7 @@ export default function Dashboard() {
                     <div className="mono dimmer" style={{ fontSize: 9 }}>{new Date(j.startDate).toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()}</div>
                   </td>
                   <td>
-                    <Link href={'/jobs/' + j.id} style={{ fontWeight: 600 }}>{j.title}</Link>
+                    {SEED_J.has(j.id) ? <Link href={'/jobs/' + j.id} style={{ fontWeight: 600 }}>{j.title}</Link> : <span style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 7 }}>{j.title}<span className="tag-new">NEW</span></span>}
                     <div className="dim" style={{ fontSize: 11.5, marginTop: 2 }}>{j.client} · {j.vehicleIds.length || '—'} vehicle{j.vehicleIds.length === 1 ? '' : 's'}</div>
                   </td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -129,11 +138,11 @@ export default function Dashboard() {
         <table className="tbl">
           <thead><tr><th>Vehicle</th><th>Class</th><th>Day rate</th><th>Utilisation</th><th>Status</th><th>Chauffeur</th></tr></thead>
           <tbody>
-            {VEHICLES.map(v => {
+            {vehicles.map(v => {
               const drv = v.assignment.kind === 'dedicated' ? driverById(v.assignment.driverId) : null
               return (
                 <tr key={v.id} className="row">
-                  <td><Link href={'/fleet/' + v.id} style={{ fontWeight: 600 }}>{v.emoji} {v.name}</Link><div className="mono dimmer" style={{ fontSize: 10 }}>{v.plate}</div></td>
+                  <td>{SEED_V.has(v.id) ? <Link href={'/fleet/' + v.id} style={{ fontWeight: 600 }}>{v.emoji} {v.name}</Link> : <span style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 7 }}>{v.emoji} {v.name}<span className="tag-new">NEW</span></span>}<div className="mono dimmer" style={{ fontSize: 10 }}>{v.plate}</div></td>
                   <td className="dim">{v.klass}</td>
                   <td className="num">{kes(v.dailyRate)}</td>
                   <td style={{ width: 130 }}>

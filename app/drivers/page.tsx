@@ -3,15 +3,19 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { DRIVERS, vehicleById, worstDoc } from '../../lib/data'
 import { initials } from '../../lib/brand'
+import { useStore } from '../../lib/store'
+import { AddDriverButton } from '../../components/QuickAdd'
 
 const STATUS_COLORS: Record<string, string> = { Available: 'var(--ok)', 'On Job': 'var(--info)', 'Off Duty': 'var(--slate-dim)' }
 const docBadge: Record<string, string> = { ok: 'badge-ok', soon: 'badge-soon', expired: 'badge-expired' }
 const docText: Record<string, string> = { ok: 'Documents valid', soon: 'Renewal due', expired: 'Expired doc' }
 const TABS = ['All', 'Available', 'On Job', 'Off Duty'] as const
+const SEED = new Set(DRIVERS.map(d => d.id))
 
 export default function DriversPage() {
+  const store = useStore()
   const [tab, setTab] = useState<(typeof TABS)[number]>('All')
-  const list = DRIVERS.filter(d => tab === 'All' || d.status === tab)
+  const list = store.drivers.filter(d => tab === 'All' || d.status === tab)
 
   return (
     <div>
@@ -19,9 +23,9 @@ export default function DriversPage() {
         <div>
           <div className="eyebrow">Directory</div>
           <h1 className="page-title">Chauffeurs</h1>
-          <div className="dim" style={{ fontSize: 12.5, marginTop: 2 }}>{DRIVERS.length} vetted chauffeurs · PSV-badged</div>
+          <div className="dim" style={{ fontSize: 12.5, marginTop: 2 }}>{store.drivers.length} vetted chauffeurs · PSV-badged</div>
         </div>
-        <button className="btn btn-primary">+ Add chauffeur</button>
+        <AddDriverButton />
       </div>
 
       <div className="tabbar" style={{ marginBottom: 14 }}>
@@ -30,14 +34,16 @@ export default function DriversPage() {
 
       <div className="grid cols-3">
         {list.map(d => {
-          const home = d.homeVehicleId ? vehicleById(d.homeVehicleId) : null
+          const home = d.homeVehicleId ? (vehicleById(d.homeVehicleId) || store.vehicles.find(v => v.id === d.homeVehicleId)) : null
           const w = worstDoc(d.compliance)
+          const isNew = !SEED.has(d.id)
+          const Card: any = isNew ? 'div' : Link
           return (
-            <Link key={d.id} href={'/drivers/' + d.id} className="card card-pad">
+            <Card key={d.id} {...(isNew ? {} : { href: '/drivers/' + d.id })} className="card card-pad">
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                 <div style={{ width: 46, height: 46, borderRadius: 11, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', fontFamily: 'var(--serif)', fontWeight: 600, color: 'var(--gold)', fontSize: 16, flex: 'none' }}>{initials(d.name)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14.5 }}>{d.name}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14.5, display: 'flex', alignItems: 'center', gap: 7 }}>{d.name}{isNew && <span className="tag-new">NEW</span>}</div>
                   <div className="dim" style={{ fontSize: 11.5 }}>{d.licenceClass}</div>
                 </div>
                 <span className="chip" style={{ color: STATUS_COLORS[d.status] }}><span className="dot" style={{ background: STATUS_COLORS[d.status] }} />{d.status}</span>
@@ -52,7 +58,7 @@ export default function DriversPage() {
                 <span className="dim" style={{ fontSize: 11.5 }}>{home ? '🚗 ' + home.name : 'Driver pool'}</span>
                 <span className={'badge ' + docBadge[w]}>{docText[w]}</span>
               </div>
-            </Link>
+            </Card>
           )
         })}
       </div>

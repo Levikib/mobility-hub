@@ -39,10 +39,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     <div className="app">
       <aside className="sidebar">
         <Link href="/" className="brand">
-          <span className="crest">EMH</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/mark-dark.png" alt="" width={38} height={38} style={{ borderRadius: 8, flex: 'none', objectFit: 'cover' }} />
           <span>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 600, lineHeight: 1.1 }}>Executive</div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.22em', color: 'var(--slate)' }}>MOBILITY HUB</div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 14.5, fontWeight: 600, lineHeight: 1.05 }}>The Executive</div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 8.5, letterSpacing: '0.22em', color: 'var(--slate)' }}>MOBILITY HUB</div>
           </span>
         </Link>
         <nav className="nav"><NavLinks pathname={pathname} /></nav>
@@ -56,7 +57,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
       {/* mobile top nav */}
       <div className="topbar">
-        <Link href="/" className="brand" style={{ padding: 0 }}><span className="crest" style={{ width: 28, height: 28, fontSize: 11 }}>EMH</span></Link>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <Link href="/" className="brand" style={{ padding: 0 }}><img src="/mark-dark.png" alt="The Executive Mobility Hub" width={30} height={30} style={{ borderRadius: 7, objectFit: 'cover' }} /></Link>
         <NavLinks pathname={pathname} />
       </div>
 

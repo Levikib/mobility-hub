@@ -1,0 +1,76 @@
+import Link from 'next/link'
+import { VEHICLES, JOBS, TODAY, driverById } from '../../lib/data'
+
+const DAYS = 14
+
+function dayKey(d: Date) { return d.toISOString().slice(0, 10) }
+
+export default function CalendarPage() {
+  const days: Date[] = Array.from({ length: DAYS }, (_, i) => new Date(TODAY.getTime() + i * 86400000))
+
+  // For each vehicle+day, find a job that covers it.
+  function jobOn(vehicleId: string, day: Date) {
+    const k = dayKey(day)
+    return JOBS.find(j => j.vehicleIds.includes(vehicleId) && j.startDate <= k && j.endDate >= k && j.status !== 'Enquiry')
+  }
+
+  return (
+    <div>
+      <div className="page-head">
+        <div>
+          <div className="eyebrow">Operations</div>
+          <h1 className="page-title">Availability</h1>
+          <div className="dim" style={{ fontSize: 12.5, marginTop: 2 }}>Live fleet calendar · next {DAYS} days · one glance, zero double-bookings</div>
+        </div>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span className="chip"><span className="dot" style={{ background: 'var(--ok)' }} />Free</span>
+          <span className="chip"><span className="dot" style={{ background: 'var(--info)' }} />Booked</span>
+          <span className="chip"><span className="dot" style={{ background: 'var(--warn)' }} />Service</span>
+        </div>
+      </div>
+
+      <div className="card" style={{ overflowX: 'auto' }}>
+        <table className="tbl" style={{ minWidth: 820 }}>
+          <thead>
+            <tr>
+              <th style={{ position: 'sticky', left: 0, background: 'var(--midnight)', minWidth: 170 }}>Vehicle</th>
+              {days.map(d => (
+                <th key={dayKey(d)} style={{ textAlign: 'center', padding: '9px 4px', color: d.getDay() === 0 || d.getDay() === 6 ? 'var(--gold)' : undefined }}>
+                  <div>{d.toLocaleDateString('en-GB', { weekday: 'narrow' })}</div>
+                  <div className="num" style={{ fontSize: 11, color: 'var(--platinum)' }}>{d.getDate()}</div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {VEHICLES.map(v => (
+              <tr key={v.id} className="row">
+                <td style={{ position: 'sticky', left: 0, background: 'var(--midnight)' }}>
+                  <Link href={'/fleet/' + v.id} style={{ fontWeight: 500, fontSize: 12.5 }}>{v.emoji} {v.name}</Link>
+                  <div className="mono dimmer" style={{ fontSize: 9.5 }}>{v.plate}</div>
+                </td>
+                {days.map(d => {
+                  const job = jobOn(v.id, d)
+                  const maint = v.status === 'Maintenance' && !job
+                  const color = job ? 'var(--info)' : maint ? 'var(--warn)' : 'var(--ok)'
+                  const bg = job ? 'rgba(111,168,214,0.16)' : maint ? 'rgba(217,164,65,0.14)' : 'rgba(91,191,138,0.08)'
+                  return (
+                    <td key={dayKey(d)} style={{ padding: 3, textAlign: 'center' }}>
+                      <div title={job ? job.title : maint ? 'In service' : 'Available'} style={{ height: 26, borderRadius: 6, background: bg, border: '1px solid ' + color, display: 'grid', placeItems: 'center' }}>
+                        <span className="dot" style={{ background: color }} />
+                      </div>
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="dimmer" style={{ fontSize: 11, marginTop: 10 }}>
+        Hover a cell for the engagement. In production this reconciles live against confirmed bookings, maintenance schedules and driver availability — the single source of truth that replaces the WhatsApp-and-spreadsheet guesswork.
+      </div>
+    </div>
+  )
+}
